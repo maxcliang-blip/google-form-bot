@@ -1,6 +1,6 @@
 from playwright.sync_api import sync_playwright
 
-FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfxJmKM61JmMT8svANYJmqy_PLEPnVHrqaXL6qfvlM0Fxla7Q/viewform"
+FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc74hNLDykqQnTUeJk7gY9pGrhqF1-V4IQi8_xnpgs9_40MKg/viewform?usp=publish-editor"
 
 def fill_form():
     with sync_playwright() as p:
