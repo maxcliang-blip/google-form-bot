@@ -1,48 +1,59 @@
 import os
 import sys
-from playwright.sync_api import sync_playwright, TimeoutError
+import time
+import random
+from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc74hNLDykqQnTUeJk7gY9pGrhqF1-V4IQi8_xnpgs9_40MKg/viewform?usp=publish-editor"
 
-def save_failure(page, error_msg):
-    """Save screenshot and logs when something fails"""
-    os.makedirs("artifacts", exist_ok=True)
-    
-    # Screenshot
-    screenshot_path = "artifacts/failure-screenshot.png"
-    page.screenshot(path=screenshot_path)
-    
-    # Page logs
-    logs_path = "artifacts/page-logs.txt"
-    with open(logs_path, "w") as f:
-        f.write(f"Error: {error_msg}\n")
-        f.write(f"URL: {page.url}\n")
-        f.write("Console logs:\n")
-        f.write("\n".join(page.context.console_message_texts()))
-    
-    print(f"Saved artifacts to {screenshot_path} and {logs_path}")
+def jitter(a=0.5, b=1.5):
+    time.sleep(random.uniform(a, b))
 
 def fill_form():
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=False)
+        page = browser.new_page()
         try:
-            page = browser.new_page()
-            
             page.goto(FORM_URL, wait_until="domcontentloaded")
-            
-            page.get_by_role("textbox").first.fill("Max Liang")
-            page.get_by_role("listbox").click()
-            page.get_by_role("option", name="Gold", exact=True).click()
-            
-            page.wait_for_timeout(3000)
-            page.get_by_role("button", name="Submit").click()
-            
             page.wait_for_load_state("networkidle")
-            print("SUCCESS: Form submitted")
-            
+
+            page.screenshot(path="before.png", full_page=True)
+
+            textboxes = page.get_by_role("textbox")
+            count = textboxes.count()
+            if count == 0:
+                raise Exception("No textbox found")
+
+            textboxes.nth(0).click()
+            jitter()
+            textboxes.nth(0).fill("Max Liang")
+
+            jitter()
+            listboxes = page.get_by_role("listbox")
+            if listboxes.count() == 0:
+                raise Exception("No listbox found")
+
+            listboxes.nth(0).click()
+            jitter()
+            page.get_by_role("option", name="Gold", exact=True).click()
+
+            jitter(1, 2)
+            submit = page.get_by_role("button", name="Submit")
+            if submit.count() == 0:
+                raise Exception("Submit button not found")
+
+            submit.click()
+            page.wait_for_load_state("networkidle")
+            page.screenshot(path="after.png", full_page=True)
+
+            print("Done")
         except Exception as e:
+            os.makedirs("artifacts", exist_ok=True)
+            page.screenshot(path="artifacts/failure.png", full_page=True)
+            with open("artifacts/error.txt", "w") as f:
+                f.write(str(e) + "\n")
+                f.write("URL: " + page.url + "\n")
             print(f"FAILED: {e}")
-            save_failure(page, str(e))
             sys.exit(1)
         finally:
             browser.close()
