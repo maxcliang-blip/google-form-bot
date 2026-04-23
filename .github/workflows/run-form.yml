@@ -26,7 +26,6 @@ jobs:
           python -m playwright install --with-deps chromium
 
       - name: Run script
-        continue-on-error: true
         run: python your_script.py
 
       - name: Upload artifacts
@@ -34,7 +33,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: form-run-artifacts
-          path: |
-            artifacts/
-            your_script.py
+          path: artifacts/
           retention-days: 7
+          if-no-files-found: warn
