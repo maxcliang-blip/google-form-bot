@@ -8,15 +8,19 @@ def main():
     os.makedirs("artifacts", exist_ok=True)
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=False)
         page = browser.new_page()
 
         try:
             page.goto(FORM_URL, wait_until="networkidle")
+
             page.screenshot(path="artifacts/loaded.png", full_page=True)
 
-            page.get_by_label("Your name").fill("Max Liang")
-            page.get_by_label("Plan").click()
+            page.get_by_role("textbox").first.fill("Max Liang")
+
+            dropdown = page.get_by_role("listbox").first
+            dropdown.click()
+
             page.get_by_role("option", name="Gold", exact=True).click()
 
             page.wait_for_timeout(2000)
