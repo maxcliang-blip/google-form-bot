@@ -8,7 +8,7 @@ def main():
     os.makedirs("artifacts", exist_ok=True)
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
+        browser = p.chromium.launch(headless=False)
         page = browser.new_page()
 
         try:
@@ -17,10 +17,15 @@ def main():
 
             page.get_by_role("textbox").first.fill("Max Liang")
 
-            page.get_by_role("listbox").first.click()
-            page.get_by_role("option", name="Gold", exact=True).click()
+            dropdown = page.get_by_role("listbox").first
+            dropdown.click()
+            page.wait_for_timeout(500)
 
-            page.wait_for_timeout(2000)
+            option = page.get_by_role("option", name="Gold", exact=True)
+            option.wait_for(state="visible")
+            option.click(force=True)
+
+            page.wait_for_timeout(1000)
             page.get_by_role("button", name="Submit").click()
 
             page.wait_for_load_state("networkidle")
