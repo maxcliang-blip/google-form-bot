@@ -25,6 +25,12 @@ jobs:
           pip install -r requirements.txt
           python -m playwright install --with-deps chromium
 
+      - name: Write state.json
+        run: |
+          cat > state.json <<'EOF'
+          ${{ secrets.GOOGLE_STATE_JSON }}
+          EOF
+
       - name: Run script
         run: python your_script.py
 
