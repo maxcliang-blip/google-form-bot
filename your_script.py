@@ -4,8 +4,13 @@ from playwright.sync_api import sync_playwright
 
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc74hNLDykqQnTUeJk7gY9pGrhqF1-V4IQi8_xnpgs9_40MKg/viewform?usp=publish-editor"
 
-def main():
+def write_marker():
     os.makedirs("artifacts", exist_ok=True)
+    with open("artifacts/started.txt", "w", encoding="utf-8") as f:
+        f.write("script started\n")
+
+def main():
+    write_marker()
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
