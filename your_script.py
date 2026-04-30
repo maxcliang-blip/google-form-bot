@@ -6,21 +6,25 @@ FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSc74hNLDykqQnTUeJk7gY9pGrhq
 
 def ensure_artifacts():
     os.makedirs("artifacts", exist_ok=True)
+    with open("artifacts/started.txt", "w", encoding="utf-8") as f:
+        f.write("started\n")
 
-def snap(page, name):
-    page.screenshot(path=f"artifacts/{name}.png", full_page=True)
+def save_error(page, label, err):
+    with open(f"artifacts/{label}-error.txt", "w", encoding="utf-8") as f:
+        f.write(repr(err) + "\n")
+        f.write("URL: " + page.url + "\n")
+    try:
+        page.screenshot(path=f"artifacts/{label}-failure.png", full_page=True)
+    except Exception:
+        pass
 
-def step(page, label, fn):
+def do_step(page, label, fn):
     try:
         fn()
+        with open(f"artifacts/{label}-ok.txt", "w", encoding="utf-8") as f:
+            f.write("ok\n")
     except Exception as e:
-        with open(f"artifacts/{label}-error.txt", "w", encoding="utf-8") as f:
-            f.write(repr(e) + "\n")
-            f.write("URL: " + page.url + "\n")
-        try:
-            snap(page, f"{label}-failure")
-        except Exception:
-            pass
+        save_error(page, label, e)
         raise
 
 def main():
@@ -28,15 +32,12 @@ def main():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        context = browser.new_context(storage_state="state.json")
-        page = context.new_page()
-
         try:
-            step(page, "goto", lambda: page.goto(FORM_URL, wait_until="networkidle"))
-            snap(page, "loaded")
+            context = browser.new_context(storage_state="state.json")
+            page = context.new_page()
 
-            step(page, "fill-name", lambda: page.get_by_role("textbox").first.fill("Max Liang"))
-            snap(page, "after-name")
+            do_step(page, "goto", lambda: page.goto(FORM_URL, wait_until="networkidle"))
+            do_step(page, "name", lambda: page.get_by_role("textbox").first.fill("Max Liang"))
 
             def choose_gold():
                 dropdown = page.get_by_role("listbox").first
@@ -46,12 +47,11 @@ def main():
                 option.wait_for(state="visible")
                 option.click(force=True)
 
-            step(page, "choose-gold", choose_gold)
-            snap(page, "after-gold")
+            do_step(page, "dropdown", choose_gold)
+            do_step(page, "submit", lambda: page.get_by_role("button", name="Submit").click())
 
-            step(page, "submit", lambda: page.get_by_role("button", name="Submit").click())
             page.wait_for_load_state("networkidle")
-            snap(page, "submitted")
+            page.screenshot(path="artifacts/submitted.png", full_page=True)
 
         finally:
             browser.close()
