@@ -40,8 +40,6 @@ jobs:
           ls -la
           echo "ARTIFACTS:"
           ls -la artifacts || true
-          echo "STATE:"
-          ls -la state.json || true
 
       - name: Upload artifacts
         if: always()
