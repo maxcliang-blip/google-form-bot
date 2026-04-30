@@ -33,6 +33,16 @@ jobs:
       - name: Run script
         run: python your_script.py
 
+      - name: Debug artifacts
+        if: always()
+        run: |
+          echo "PWD=$(pwd)"
+          ls -la
+          echo "ARTIFACTS:"
+          ls -la artifacts || true
+          echo "STATE:"
+          ls -la state.json || true
+
       - name: Upload artifacts
         if: always()
         uses: actions/upload-artifact@v4
