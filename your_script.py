@@ -9,7 +9,8 @@ def main():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+        context = browser.new_context(storage_state="state.json")
+        page = context.new_page()
 
         try:
             page.goto(FORM_URL, wait_until="networkidle")
